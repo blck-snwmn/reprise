@@ -1,12 +1,24 @@
 {
   "name": "reprise",
-  "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "build": "bun run build.ts",
+    "dev": "bun --watch run build.ts"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@tailwindcss/cli": "^4.1.18",
+    "@types/bun": "latest",
+    "@types/chrome": "^0.1.32",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.1.18"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   }
 }
