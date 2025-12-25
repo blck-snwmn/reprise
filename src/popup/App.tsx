@@ -1,18 +1,32 @@
 import { useState, useEffect, useRef } from "react";
 import type { Message, StateResponse } from "../types";
 
-function parseTime(mmss: string): number {
-  const parts = mmss.split(":");
-  if (parts.length !== 2) return 0;
-  const min = Number(parts[0]);
-  const sec = Number(parts[1]);
-  if (isNaN(min) || isNaN(sec)) return 0;
-  return min * 60 + sec;
+function parseTime(timeStr: string): number {
+  const parts = timeStr.split(":");
+  if (parts.length === 2) {
+    // mm:ss format
+    const min = Number(parts[0]);
+    const sec = Number(parts[1]);
+    if (isNaN(min) || isNaN(sec)) return 0;
+    return min * 60 + sec;
+  } else if (parts.length === 3) {
+    // hh:mm:ss format
+    const hour = Number(parts[0]);
+    const min = Number(parts[1]);
+    const sec = Number(parts[2]);
+    if (isNaN(hour) || isNaN(min) || isNaN(sec)) return 0;
+    return hour * 3600 + min * 60 + sec;
+  }
+  return 0;
 }
 
 function formatTime(seconds: number): string {
-  const min = Math.floor(seconds / 60);
+  const hour = Math.floor(seconds / 3600);
+  const min = Math.floor((seconds % 3600) / 60);
   const sec = Math.floor(seconds % 60);
+  if (hour > 0) {
+    return `${hour}:${min.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
+  }
   return `${min}:${sec.toString().padStart(2, "0")}`;
 }
 
@@ -83,24 +97,24 @@ export default function App() {
 
       <div className="space-y-3">
         <div>
-          <label className="block text-sm text-gray-400 mb-1">Start (mm:ss)</label>
+          <label className="block text-sm text-gray-400 mb-1">Start</label>
           <input
             type="text"
             value={startInput}
             onChange={(e) => setStartInput(e.target.value)}
             className="w-full px-2 py-1 bg-gray-800 border border-gray-700 rounded text-white"
-            placeholder="0:00"
+            placeholder="0:00 or 0:00:00"
           />
         </div>
 
         <div>
-          <label className="block text-sm text-gray-400 mb-1">End (mm:ss)</label>
+          <label className="block text-sm text-gray-400 mb-1">End</label>
           <input
             type="text"
             value={endInput}
             onChange={(e) => setEndInput(e.target.value)}
             className="w-full px-2 py-1 bg-gray-800 border border-gray-700 rounded text-white"
-            placeholder="0:00"
+            placeholder="0:00 or 0:00:00"
           />
         </div>
 
