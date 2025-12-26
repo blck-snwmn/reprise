@@ -133,36 +133,36 @@ chrome.runtime.onMessage.addListener(
             videoTitle: getVideoTitle(),
             duration: video?.duration ?? 0,
             currentTime: video?.currentTime ?? 0,
-          } as VideoInfoResponse;
+          } satisfies VideoInfoResponse;
 
         case "GET_CURRENT_TIME":
           return {
             currentTime: video?.currentTime ?? 0,
-          } as CurrentTimeResponse;
+          } satisfies CurrentTimeResponse;
 
         case "GET_LOOPS": {
           if (!videoId) {
-            return { videoId: null, loops: [], activeLoopId: null } as LoopsResponse;
+            return { videoId: null, loops: [], activeLoopId: null } satisfies LoopsResponse;
           }
           const config = await getVideoConfig(videoId);
           return {
             videoId,
             loops: config?.loops ?? [],
             activeLoopId: config?.activeLoopId ?? null,
-          } as LoopsResponse;
+          } satisfies LoopsResponse;
         }
 
         case "ADD_LOOP": {
           if (!videoId) {
-            return { success: false, error: "No video" } as LoopOperationResponse;
+            return { success: false, error: "No video" } satisfies LoopOperationResponse;
           }
           const newLoop = await addLoop(videoId, message.loop, getVideoTitle() ?? undefined);
-          return { success: true, loop: newLoop } as LoopOperationResponse;
+          return { success: true, loop: newLoop } satisfies LoopOperationResponse;
         }
 
         case "UPDATE_LOOP": {
           if (!videoId) {
-            return { success: false, error: "No video" } as LoopOperationResponse;
+            return { success: false, error: "No video" } satisfies LoopOperationResponse;
           }
           await updateLoop(videoId, message.loop);
           if (activeLoopId === message.loop.id) {
@@ -173,23 +173,23 @@ chrome.runtime.onMessage.addListener(
               video.currentTime = startTime;
             }
           }
-          return { success: true, loop: message.loop } as LoopOperationResponse;
+          return { success: true, loop: message.loop } satisfies LoopOperationResponse;
         }
 
         case "DELETE_LOOP": {
           if (!videoId) {
-            return { success: false, error: "No video" } as LoopOperationResponse;
+            return { success: false, error: "No video" } satisfies LoopOperationResponse;
           }
           await deleteLoop(videoId, message.loopId);
           if (activeLoopId === message.loopId) {
             resetState();
           }
-          return { success: true } as LoopOperationResponse;
+          return { success: true } satisfies LoopOperationResponse;
         }
 
         case "ACTIVATE_LOOP": {
           if (!videoId) {
-            return { success: false, error: "No video" } as LoopOperationResponse;
+            return { success: false, error: "No video" } satisfies LoopOperationResponse;
           }
           const loop = await setActiveLoop(videoId, message.loopId);
           if (loop) {
@@ -204,7 +204,7 @@ chrome.runtime.onMessage.addListener(
           } else {
             resetState();
           }
-          return { success: true, loop: loop ?? undefined } as LoopOperationResponse;
+          return { success: true, loop: loop ?? undefined } satisfies LoopOperationResponse;
         }
 
         case "SEEK_TO_LOOP_START": {

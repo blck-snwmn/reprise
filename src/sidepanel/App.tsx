@@ -69,7 +69,8 @@ export default function App() {
       loop: data,
     });
     if (result?.success && result.loop) {
-      setLoops((prev) => [...prev, result.loop!]);
+      const newLoop = result.loop;
+      setLoops((prev) => [...prev, newLoop]);
       setEditorMode({ type: "closed" });
     }
   };

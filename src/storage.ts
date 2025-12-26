@@ -7,10 +7,15 @@ function generateId(): string {
   return crypto.randomUUID();
 }
 
+function isStorageData(value: unknown): value is StorageData {
+  return typeof value === "object" && value !== null && "videos" in value && "version" in value;
+}
+
 async function getStorageData(): Promise<StorageData> {
   const result = await chrome.storage.local.get(STORAGE_KEY);
-  if (result[STORAGE_KEY]) {
-    return result[STORAGE_KEY] as StorageData;
+  const data = result[STORAGE_KEY];
+  if (isStorageData(data)) {
+    return data;
   }
   return { videos: {}, version: SCHEMA_VERSION };
 }
