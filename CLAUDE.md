@@ -57,6 +57,22 @@ bun run test:watch
 3. `bun run test` - テスト実行
 4. `bun run build` - ビルド確認
 
+## Coding Rules
+
+### content.ts: video変数の扱い
+
+`video`変数への代入は必ず`setVideo()`関数を経由すること。
+
+```typescript
+// ❌ NG: 直接代入するとtimeupdateリスナーが付かない
+video = findVideo();
+
+// ✅ OK: setVideoを使う（リスナーの付け外しを管理）
+setVideo(findVideo());
+```
+
+`setVideo()`は古いvideoからリスナーを外し、新しいvideoにリスナーを付ける処理を行う。直接代入するとこの処理がスキップされ、ループ機能が動作しなくなる。
+
 ## Architecture
 
 This is a Chrome Extension (Manifest V3) built with:
