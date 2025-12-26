@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type {
   LoopEntry,
   VideoInfoResponse,
@@ -18,7 +18,6 @@ export default function App() {
   const [activeLoopId, setActiveLoopId] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<EditorMode>({ type: "closed" });
   const [error, setError] = useState<string | null>(null);
-  const lastVideoIdRef = useRef<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -29,12 +28,6 @@ export default function App() {
       if (loopsData) {
         setLoops(loopsData.loops);
         setActiveLoopId(loopsData.activeLoopId);
-
-        // タブ切り替え（videoId変更）時に開始位置へ移動
-        if (loopsData.videoId && loopsData.videoId !== lastVideoIdRef.current) {
-          lastVideoIdRef.current = loopsData.videoId;
-          await sendMessage({ type: "SEEK_TO_LOOP_START" });
-        }
       }
       setError(null);
     } catch {
@@ -44,8 +37,23 @@ export default function App() {
 
   useEffect(() => {
     void loadData();
-    const interval = setInterval(() => void loadData(), 2000);
-    return () => clearInterval(interval);
+
+    const handleMessage = (message: { type: string }) => {
+      if (message.type === "VIDEO_CHANGED") {
+        void loadData();
+      }
+    };
+
+    const handleTabActivated = () => {
+      void loadData();
+    };
+
+    chrome.runtime.onMessage.addListener(handleMessage);
+    chrome.tabs.onActivated.addListener(handleTabActivated);
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleMessage);
+      chrome.tabs.onActivated.removeListener(handleTabActivated);
+    };
   }, [loadData]);
 
   const handleActivate = async (loopId: string | null) => {

@@ -96,6 +96,13 @@ async function checkVideoChange() {
       resetState();
     }
     video = findVideo();
+
+    // Side Panel に動画変更を通知（リスナーがいない場合は無視）
+    try {
+      await chrome.runtime.sendMessage({ type: "VIDEO_CHANGED", videoId: currentVideoId });
+    } catch {
+      // Side Panel が開いていない場合は無視
+    }
   }
 }
 

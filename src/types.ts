@@ -31,7 +31,8 @@ export type Message =
   | { type: "UPDATE_LOOP"; loop: LoopEntry }
   | { type: "DELETE_LOOP"; loopId: string }
   | { type: "ACTIVATE_LOOP"; loopId: string | null }
-  | { type: "SEEK_TO_LOOP_START" };
+  | { type: "SEEK_TO_LOOP_START" }
+  | { type: "VIDEO_CHANGED"; videoId: string | null };
 
 /** レスポンス型 */
 export type VideoInfoResponse = {
