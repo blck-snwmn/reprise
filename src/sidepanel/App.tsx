@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type {
   LoopEntry,
+  Message,
   VideoInfoResponse,
   LoopsResponse,
   CurrentTimeResponse,
@@ -50,7 +51,7 @@ export default function App() {
   useEffect(() => {
     debouncedLoadData();
 
-    const handleMessage = (message: { type: string }) => {
+    const handleMessage = (message: Message) => {
       if (message.type === "VIDEO_CHANGED") {
         debouncedLoadData();
       }
