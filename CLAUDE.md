@@ -40,6 +40,12 @@ bun run fmt
 
 # Check formatting
 bun run fmt:check
+
+# Run tests
+bun run test
+
+# Run tests in watch mode
+bun run test:watch
 ```
 
 ## After Code Changes
@@ -48,7 +54,8 @@ bun run fmt:check
 
 1. `bun run fmt` - コードフォーマット
 2. `bun run lint` - リントチェック
-3. `bun run build` - ビルド確認
+3. `bun run test` - テスト実行
+4. `bun run build` - ビルド確認
 
 ## Architecture
 
