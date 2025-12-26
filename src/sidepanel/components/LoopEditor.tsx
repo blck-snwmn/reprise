@@ -25,12 +25,8 @@ export function LoopEditor({
 }: LoopEditorProps) {
   const [songName, setSongName] = useState(loop?.songName ?? "");
   const [artistName, setArtistName] = useState(loop?.artistName ?? "");
-  const [startInput, setStartInput] = useState(
-    loop ? formatTime(loop.startTime) : "0:00"
-  );
-  const [endInput, setEndInput] = useState(
-    loop ? formatTime(loop.endTime) : formatTime(duration)
-  );
+  const [startInput, setStartInput] = useState(loop ? formatTime(loop.startTime) : "0:00");
+  const [endInput, setEndInput] = useState(loop ? formatTime(loop.endTime) : formatTime(duration));
   const [errors, setErrors] = useState<{
     start?: string;
     end?: string;
@@ -80,13 +76,8 @@ export function LoopEditor({
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="p-4 bg-gray-800 rounded-lg border border-gray-700"
-    >
-      <h3 className="text-sm font-medium text-white mb-4">
-        {loop ? "Edit Loop" : "Add Loop"}
-      </h3>
+    <form onSubmit={handleSubmit} className="p-4 bg-gray-800 rounded-lg border border-gray-700">
+      <h3 className="text-sm font-medium text-white mb-4">{loop ? "Edit Loop" : "Add Loop"}</h3>
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
@@ -128,9 +119,7 @@ export function LoopEditor({
           error={errors.end}
         />
 
-        {errors.general && (
-          <p className="text-sm text-red-400">{errors.general}</p>
-        )}
+        {errors.general && <p className="text-sm text-red-400">{errors.general}</p>}
 
         <div className="flex gap-2">
           <button

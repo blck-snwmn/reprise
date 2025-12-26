@@ -10,17 +10,8 @@ interface LoopListProps {
   onDelete: (loopId: string) => void;
 }
 
-export function LoopList({
-  loops,
-  activeLoopId,
-  onActivate,
-  onEdit,
-  onDelete,
-}: LoopListProps) {
-  const sortedLoops = useMemo(
-    () => [...loops].sort((a, b) => a.startTime - b.startTime),
-    [loops]
-  );
+export function LoopList({ loops, activeLoopId, onActivate, onEdit, onDelete }: LoopListProps) {
+  const sortedLoops = useMemo(() => [...loops].sort((a, b) => a.startTime - b.startTime), [loops]);
 
   if (loops.length === 0) {
     return (
@@ -38,9 +29,7 @@ export function LoopList({
           key={loop.id}
           loop={loop}
           isActive={loop.id === activeLoopId}
-          onActivate={() =>
-            onActivate(loop.id === activeLoopId ? null : loop.id)
-          }
+          onActivate={() => onActivate(loop.id === activeLoopId ? null : loop.id)}
           onEdit={() => onEdit(loop)}
           onDelete={() => onDelete(loop.id)}
         />

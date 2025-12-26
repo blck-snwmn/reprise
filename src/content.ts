@@ -14,11 +14,7 @@ import {
   setActiveLoop,
 } from "./storage";
 
-type ResponseType =
-  | VideoInfoResponse
-  | LoopsResponse
-  | CurrentTimeResponse
-  | LoopOperationResponse;
+type ResponseType = VideoInfoResponse | LoopsResponse | CurrentTimeResponse | LoopOperationResponse;
 
 let video: HTMLVideoElement | null = null;
 let startTime = 0;
@@ -34,7 +30,7 @@ function getVideoId(): string | null {
 
 function getVideoTitle(): string | null {
   const titleElement = document.querySelector(
-    "h1.ytd-video-primary-info-renderer yt-formatted-string, h1.ytd-watch-metadata yt-formatted-string"
+    "h1.ytd-video-primary-info-renderer yt-formatted-string, h1.ytd-watch-metadata yt-formatted-string",
   );
   return titleElement?.textContent ?? null;
 }
@@ -213,7 +209,7 @@ chrome.runtime.onMessage.addListener(
 
     handleMessage().then(sendResponse);
     return true;
-  }
+  },
 );
 
 init();

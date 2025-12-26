@@ -81,7 +81,7 @@ export default function App() {
       artistName: string;
       startTime: number;
       endTime: number;
-    }
+    },
   ) => {
     if (editorMode.type !== "edit") return;
 
@@ -96,9 +96,7 @@ export default function App() {
     });
 
     if (result?.success) {
-      setLoops((prev) =>
-        prev.map((l) => (l.id === loopId ? updatedLoop : l))
-      );
+      setLoops((prev) => prev.map((l) => (l.id === loopId ? updatedLoop : l)));
       setEditorMode({ type: "closed" });
     }
   };
@@ -131,9 +129,7 @@ export default function App() {
       <div className="min-h-screen bg-gray-900 text-white p-4">
         <div className="text-center py-8">
           <p className="text-red-400 mb-4">{error}</p>
-          <p className="text-sm text-gray-500">
-            Open a YouTube video and try again
-          </p>
+          <p className="text-sm text-gray-500">Open a YouTube video and try again</p>
           <button
             onClick={loadData}
             className="mt-4 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm transition-colors"
@@ -150,9 +146,7 @@ export default function App() {
       <div className="min-h-screen bg-gray-900 text-white p-4">
         <div className="text-center py-8">
           <p className="text-gray-400">No video detected</p>
-          <p className="text-sm text-gray-500 mt-2">
-            Open a YouTube video to use Reprise
-          </p>
+          <p className="text-sm text-gray-500 mt-2">Open a YouTube video to use Reprise</p>
         </div>
       </div>
     );
@@ -165,9 +159,7 @@ export default function App() {
         <p className="text-sm text-gray-400 truncate mt-1">
           {videoInfo.videoTitle || "YouTube Video"}
         </p>
-        <p className="text-xs text-gray-500">
-          Duration: {formatTime(videoInfo.duration)}
-        </p>
+        <p className="text-xs text-gray-500">Duration: {formatTime(videoInfo.duration)}</p>
       </div>
 
       <div className="p-4">

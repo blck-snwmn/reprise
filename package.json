@@ -4,7 +4,11 @@
   "private": true,
   "scripts": {
     "build": "bun run build.ts",
-    "dev": "bun --watch run build.ts"
+    "dev": "bun --watch run build.ts",
+    "lint": "oxlint --type-aware",
+    "lint:fix": "oxlint --type-aware --fix",
+    "fmt": "oxfmt --write src",
+    "fmt:check": "oxfmt src"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.18",
@@ -12,6 +16,9 @@
     "@types/chrome": "^0.1.32",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "oxfmt": "^0.20.0",
+    "oxlint": "^1.35.0",
+    "oxlint-tsgolint": "^0.10.0",
     "tailwindcss": "^4.1.18"
   },
   "peerDependencies": {

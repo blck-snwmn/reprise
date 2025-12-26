@@ -5,8 +5,7 @@ export function parseTime(timeStr: string): number {
   if (parts.length === 2) {
     const min = parts[0];
     const sec = parts[1];
-    if (min === undefined || sec === undefined || isNaN(min) || isNaN(sec))
-      return NaN;
+    if (min === undefined || sec === undefined || isNaN(min) || isNaN(sec)) return NaN;
     return min * 60 + sec;
   } else if (parts.length === 3) {
     const hour = parts[0];

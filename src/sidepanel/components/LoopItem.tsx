@@ -9,13 +9,7 @@ interface LoopItemProps {
   onDelete: () => void;
 }
 
-export function LoopItem({
-  loop,
-  isActive,
-  onActivate,
-  onEdit,
-  onDelete,
-}: LoopItemProps) {
+export function LoopItem({ loop, isActive, onActivate, onEdit, onDelete }: LoopItemProps) {
   const displayName = loop.songName || `Loop ${formatTime(loop.startTime)}`;
   const timeRange = `${formatTime(loop.startTime)} - ${formatTime(loop.endTime)}`;
 
@@ -36,12 +30,8 @@ export function LoopItem({
             }`}
           />
           <div className="min-w-0">
-            <p className="text-sm font-medium text-white truncate">
-              {displayName}
-            </p>
-            {loop.artistName && (
-              <p className="text-xs text-gray-400 truncate">{loop.artistName}</p>
-            )}
+            <p className="text-sm font-medium text-white truncate">{displayName}</p>
+            {loop.artistName && <p className="text-xs text-gray-400 truncate">{loop.artistName}</p>}
             <p className="text-xs text-gray-500">{timeRange}</p>
           </div>
         </div>
