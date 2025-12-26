@@ -37,14 +37,14 @@ export default function App() {
         }
       }
       setError(null);
-    } catch (e) {
+    } catch {
       setError("Failed to connect to YouTube tab");
     }
   }, []);
 
   useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 2000);
+    void loadData();
+    const interval = setInterval(() => void loadData(), 2000);
     return () => clearInterval(interval);
   }, [loadData]);
 
@@ -181,9 +181,9 @@ export default function App() {
             duration={videoInfo.duration}
             onSave={(data) => {
               if (editorMode.type === "edit") {
-                handleUpdateLoop(editorMode.loop.id, data);
+                void handleUpdateLoop(editorMode.loop.id, data);
               } else {
-                handleAddLoop(data);
+                void handleAddLoop(data);
               }
             }}
             onCancel={() => setEditorMode({ type: "closed" })}

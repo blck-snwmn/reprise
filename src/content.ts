@@ -96,7 +96,7 @@ async function init() {
   }
 
   const observer = new MutationObserver(() => {
-    checkVideoChange();
+    void checkVideoChange();
     if (!video) {
       video = findVideo();
       if (video) {
@@ -207,9 +207,11 @@ chrome.runtime.onMessage.addListener(
       }
     };
 
-    handleMessage().then(sendResponse);
+    handleMessage()
+      .then(sendResponse)
+      .catch(() => sendResponse({ success: false, error: "Internal error" }));
     return true;
   },
 );
 
-init();
+void init();
