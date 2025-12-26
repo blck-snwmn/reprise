@@ -1,0 +1,212 @@
+import { useState, useEffect, useCallback, useRef } from "react";
+import type {
+  LoopEntry,
+  VideoInfoResponse,
+  LoopsResponse,
+  CurrentTimeResponse,
+  LoopOperationResponse,
+} from "../types";
+import { sendMessage, formatTime } from "../utils";
+import { LoopList } from "./components/LoopList";
+import { LoopEditor } from "./components/LoopEditor";
+
+type EditorMode = { type: "closed" } | { type: "add" } | { type: "edit"; loop: LoopEntry };
+
+export default function App() {
+  const [videoInfo, setVideoInfo] = useState<VideoInfoResponse | null>(null);
+  const [loops, setLoops] = useState<LoopEntry[]>([]);
+  const [activeLoopId, setActiveLoopId] = useState<string | null>(null);
+  const [editorMode, setEditorMode] = useState<EditorMode>({ type: "closed" });
+  const [error, setError] = useState<string | null>(null);
+  const lastVideoIdRef = useRef<string | null>(null);
+
+  const loadData = useCallback(async () => {
+    try {
+      const info = await sendMessage<VideoInfoResponse>({ type: "GET_VIDEO_INFO" });
+      setVideoInfo(info ?? null);
+
+      const loopsData = await sendMessage<LoopsResponse>({ type: "GET_LOOPS" });
+      if (loopsData) {
+        setLoops(loopsData.loops);
+        setActiveLoopId(loopsData.activeLoopId);
+
+        // タブ切り替え（videoId変更）時に開始位置へ移動
+        if (loopsData.videoId && loopsData.videoId !== lastVideoIdRef.current) {
+          lastVideoIdRef.current = loopsData.videoId;
+          await sendMessage({ type: "SEEK_TO_LOOP_START" });
+        }
+      }
+      setError(null);
+    } catch (e) {
+      setError("Failed to connect to YouTube tab");
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 2000);
+    return () => clearInterval(interval);
+  }, [loadData]);
+
+  const handleActivate = async (loopId: string | null) => {
+    const result = await sendMessage<LoopOperationResponse>({
+      type: "ACTIVATE_LOOP",
+      loopId,
+    });
+    if (result?.success) {
+      setActiveLoopId(loopId);
+    }
+  };
+
+  const handleAddLoop = async (data: {
+    songName: string;
+    artistName: string;
+    startTime: number;
+    endTime: number;
+  }) => {
+    const result = await sendMessage<LoopOperationResponse>({
+      type: "ADD_LOOP",
+      loop: data,
+    });
+    if (result?.success && result.loop) {
+      setLoops((prev) => [...prev, result.loop!]);
+      setEditorMode({ type: "closed" });
+    }
+  };
+
+  const handleUpdateLoop = async (
+    loopId: string,
+    data: {
+      songName: string;
+      artistName: string;
+      startTime: number;
+      endTime: number;
+    }
+  ) => {
+    if (editorMode.type !== "edit") return;
+
+    const updatedLoop: LoopEntry = {
+      ...editorMode.loop,
+      ...data,
+    };
+
+    const result = await sendMessage<LoopOperationResponse>({
+      type: "UPDATE_LOOP",
+      loop: updatedLoop,
+    });
+
+    if (result?.success) {
+      setLoops((prev) =>
+        prev.map((l) => (l.id === loopId ? updatedLoop : l))
+      );
+      setEditorMode({ type: "closed" });
+    }
+  };
+
+  const handleDeleteLoop = async (loopId: string) => {
+    if (!confirm("Delete this loop?")) return;
+
+    const result = await sendMessage<LoopOperationResponse>({
+      type: "DELETE_LOOP",
+      loopId,
+    });
+
+    if (result?.success) {
+      setLoops((prev) => prev.filter((l) => l.id !== loopId));
+      if (activeLoopId === loopId) {
+        setActiveLoopId(null);
+      }
+    }
+  };
+
+  const getCurrentTime = async (): Promise<number> => {
+    const result = await sendMessage<CurrentTimeResponse>({
+      type: "GET_CURRENT_TIME",
+    });
+    return result?.currentTime ?? 0;
+  };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white p-4">
+        <div className="text-center py-8">
+          <p className="text-red-400 mb-4">{error}</p>
+          <p className="text-sm text-gray-500">
+            Open a YouTube video and try again
+          </p>
+          <button
+            onClick={loadData}
+            className="mt-4 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!videoInfo?.videoId) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white p-4">
+        <div className="text-center py-8">
+          <p className="text-gray-400">No video detected</p>
+          <p className="text-sm text-gray-500 mt-2">
+            Open a YouTube video to use Reprise
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white">
+      <div className="p-4 border-b border-gray-800">
+        <h1 className="text-lg font-bold">Reprise</h1>
+        <p className="text-sm text-gray-400 truncate mt-1">
+          {videoInfo.videoTitle || "YouTube Video"}
+        </p>
+        <p className="text-xs text-gray-500">
+          Duration: {formatTime(videoInfo.duration)}
+        </p>
+      </div>
+
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-medium text-gray-400">Loops</h2>
+          {editorMode.type === "closed" && (
+            <button
+              onClick={() => setEditorMode({ type: "add" })}
+              className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white text-sm font-medium rounded transition-colors"
+            >
+              + Add Loop
+            </button>
+          )}
+        </div>
+
+        {editorMode.type !== "closed" ? (
+          <LoopEditor
+            loop={editorMode.type === "edit" ? editorMode.loop : undefined}
+            duration={videoInfo.duration}
+            onSave={(data) => {
+              if (editorMode.type === "edit") {
+                handleUpdateLoop(editorMode.loop.id, data);
+              } else {
+                handleAddLoop(data);
+              }
+            }}
+            onCancel={() => setEditorMode({ type: "closed" })}
+            onGetCurrentTime={getCurrentTime}
+          />
+        ) : (
+          <LoopList
+            loops={loops}
+            activeLoopId={activeLoopId}
+            onActivate={handleActivate}
+            onEdit={(loop) => setEditorMode({ type: "edit", loop })}
+            onDelete={handleDeleteLoop}
+          />
+        )}
+      </div>
+    </div>
+  );
+}

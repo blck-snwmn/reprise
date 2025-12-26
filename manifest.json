@@ -1,12 +1,17 @@
 {
   "manifest_version": 3,
   "name": "Reprise",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "YouTube video loop control with custom start/end times",
-  "permissions": ["activeTab"],
+  "permissions": ["activeTab", "storage", "sidePanel", "scripting"],
   "host_permissions": ["https://www.youtube.com/*"],
-  "action": {
-    "default_popup": "popup/index.html"
+  "action": {},
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/index.html"
   },
   "content_scripts": [
     {
