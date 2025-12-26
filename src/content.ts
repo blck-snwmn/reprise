@@ -220,6 +220,9 @@ chrome.runtime.onMessage.addListener(
           }
           return { success: true };
         }
+
+        default:
+          return { success: false, error: "Unknown message type" };
       }
     };
 

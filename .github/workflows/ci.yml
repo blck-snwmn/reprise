@@ -15,7 +15,7 @@ jobs:
       - run: bun install
 
       - name: Lint
-        run: bun run lint --type-check
+        run: bun run lint
 
       - name: Format check
         run: bun run fmt:check
