@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type {
   LoopEntry,
   VideoInfoResponse,
@@ -35,17 +35,29 @@ export default function App() {
     }
   }, []);
 
+  const loadDataTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const debouncedLoadData = useCallback(() => {
+    if (loadDataTimerRef.current) {
+      clearTimeout(loadDataTimerRef.current);
+    }
+    loadDataTimerRef.current = setTimeout(() => {
+      void loadData();
+      loadDataTimerRef.current = null;
+    }, 50);
+  }, [loadData]);
+
   useEffect(() => {
-    void loadData();
+    debouncedLoadData();
 
     const handleMessage = (message: { type: string }) => {
       if (message.type === "VIDEO_CHANGED") {
-        void loadData();
+        debouncedLoadData();
       }
     };
 
     const handleTabActivated = () => {
-      void loadData();
+      debouncedLoadData();
     };
 
     chrome.runtime.onMessage.addListener(handleMessage);
@@ -53,8 +65,11 @@ export default function App() {
     return () => {
       chrome.runtime.onMessage.removeListener(handleMessage);
       chrome.tabs.onActivated.removeListener(handleTabActivated);
+      if (loadDataTimerRef.current) {
+        clearTimeout(loadDataTimerRef.current);
+      }
     };
-  }, [loadData]);
+  }, [debouncedLoadData]);
 
   const handleActivate = async (loopId: string | null) => {
     const result = await sendMessage<LoopOperationResponse>({
