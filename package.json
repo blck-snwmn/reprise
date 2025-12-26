@@ -5,6 +5,8 @@
   "scripts": {
     "build": "bun run build.ts",
     "dev": "bun --watch run build.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "oxlint --type-aware --deny-warnings",
     "lint:fix": "oxlint --type-aware --deny-warnings --fix",
     "fmt": "oxfmt --write src",
@@ -20,7 +22,8 @@
     "oxfmt": "^0.20.0",
     "oxlint": "^1.35.0",
     "oxlint-tsgolint": "^0.10.0",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "vitest": "^4.0.16"
   },
   "peerDependencies": {
     "typescript": "^5"
