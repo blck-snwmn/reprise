@@ -5,8 +5,9 @@ A Chrome extension for looping specific sections of YouTube videos.
 ## Features
 
 - Loop playback with custom start/end times
-- Configure via popup UI
-- Toggle loop ON/OFF
+- Configure via Side Panel UI
+- Manage multiple loops per video
+- Loop settings persist across sessions
 
 ## Build
 
