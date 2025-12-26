@@ -54,6 +54,22 @@ function resetState() {
   activeLoopId = null;
 }
 
+function setVideo(newVideo: HTMLVideoElement | null) {
+  if (video === newVideo) return;
+
+  // Remove listener from old video to prevent memory leaks
+  if (video) {
+    video.removeEventListener("timeupdate", handleTimeUpdate);
+  }
+
+  video = newVideo;
+
+  // Add listener to new video
+  if (video) {
+    video.addEventListener("timeupdate", handleTimeUpdate);
+  }
+}
+
 async function restoreLoopState(videoId: string) {
   const loop = await getActiveLoop(videoId);
   if (loop) {
@@ -84,10 +100,7 @@ async function checkVideoChange() {
 }
 
 async function init() {
-  video = findVideo();
-  if (video) {
-    video.addEventListener("timeupdate", handleTimeUpdate);
-  }
+  setVideo(findVideo());
 
   const videoId = getVideoId();
   if (videoId) {
@@ -97,12 +110,8 @@ async function init() {
 
   const observer = new MutationObserver(() => {
     void checkVideoChange();
-    if (!video) {
-      video = findVideo();
-      if (video) {
-        video.addEventListener("timeupdate", handleTimeUpdate);
-      }
-    }
+    // Always try to find video - setVideo handles deduplication
+    setVideo(findVideo());
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
