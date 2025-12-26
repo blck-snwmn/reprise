@@ -42,6 +42,14 @@ bun run fmt
 bun run fmt:check
 ```
 
+## After Code Changes
+
+コード編集後は以下のコマンドを順番に実行すること:
+
+1. `bun run fmt` - コードフォーマット
+2. `bun run lint` - リントチェック
+3. `bun run build` - ビルド確認
+
 ## Architecture
 
 This is a Chrome Extension (Manifest V3) built with:
