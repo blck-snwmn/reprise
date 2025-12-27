@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import type {
   Track,
   LoopSetting,
@@ -11,6 +11,7 @@ import type {
 import { sendMessage, formatTime } from "../utils";
 import { LoopList } from "./components/LoopList";
 import { LoopEditor } from "./components/LoopEditor";
+import { ActiveLoopDisplay } from "./components/ActiveLoopDisplay";
 
 type EditorMode = { type: "closed" } | { type: "add" } | { type: "edit"; track: Track };
 
@@ -158,6 +159,13 @@ export default function App() {
     return result?.currentTime ?? 0;
   };
 
+  const activeTrack = useMemo(() => {
+    if (!activeLoopSettingId) return null;
+    const loopSetting = loopSettings.find((ls) => ls.id === activeLoopSettingId);
+    if (!loopSetting) return null;
+    return tracks.find((t) => t.id === loopSetting.trackId) ?? null;
+  }, [activeLoopSettingId, loopSettings, tracks]);
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-900 text-white p-4">
@@ -197,14 +205,19 @@ export default function App() {
       </div>
 
       <div className="p-4">
+        <h2 className="text-sm font-medium text-gray-400 mb-2">Now Playing</h2>
+        <ActiveLoopDisplay track={activeTrack} onStop={() => handleActivate(null)} />
+      </div>
+
+      <div className="p-4 border-t border-gray-800">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-medium text-gray-400">Loops</h2>
+          <h2 className="text-sm font-medium text-gray-400">Tracks</h2>
           {editorMode.type === "closed" && (
             <button
               onClick={() => setEditorMode({ type: "add" })}
               className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white text-sm font-medium rounded transition-colors"
             >
-              + Add Loop
+              + Add Track
             </button>
           )}
         </div>
