@@ -6,6 +6,7 @@ import type { Track } from "../../types";
 interface LoopEditorProps {
   track?: Track;
   duration: number;
+  suggestedStartTime?: number;
   onSave: (data: {
     songName: string;
     artistName: string;
@@ -19,13 +20,20 @@ interface LoopEditorProps {
 export function LoopEditor({
   track,
   duration,
+  suggestedStartTime,
   onSave,
   onCancel,
   onGetCurrentTime,
 }: LoopEditorProps) {
   const [songName, setSongName] = useState(track?.songName ?? "");
   const [artistName, setArtistName] = useState(track?.artistName ?? "");
-  const [startInput, setStartInput] = useState(track ? formatTime(track.startTime) : "0:00");
+  const [startInput, setStartInput] = useState(() => {
+    if (track) return formatTime(track.startTime);
+    if (suggestedStartTime !== undefined && suggestedStartTime < duration) {
+      return formatTime(suggestedStartTime);
+    }
+    return "0:00";
+  });
   const [endInput, setEndInput] = useState(
     track ? formatTime(track.endTime) : formatTime(duration),
   );

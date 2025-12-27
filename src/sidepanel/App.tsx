@@ -173,6 +173,11 @@ export default function App() {
     return tracks.find((t) => t.id === loopSetting.trackId) ?? null;
   }, [activeLoopSettingId, loopSettings, tracks]);
 
+  const suggestedStartTime = useMemo(() => {
+    if (tracks.length === 0) return undefined;
+    return Math.max(...tracks.map((t) => t.endTime));
+  }, [tracks]);
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-900 text-white p-4">
@@ -233,6 +238,7 @@ export default function App() {
           <LoopEditor
             track={editorMode.type === "edit" ? editorMode.track : undefined}
             duration={videoInfo.duration}
+            suggestedStartTime={editorMode.type === "add" ? suggestedStartTime : undefined}
             onSave={(data) => {
               if (editorMode.type === "edit") {
                 void handleUpdateLoop(editorMode.track.id, data);
