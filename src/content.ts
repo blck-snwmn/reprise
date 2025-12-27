@@ -244,13 +244,6 @@ chrome.runtime.onMessage.addListener(
           return { success: true, track: track ?? undefined } satisfies LoopOperationResponse;
         }
 
-        case "SEEK_TO_LOOP_START": {
-          if (enabled && video && activeLoopSettingId) {
-            video.currentTime = startTime;
-          }
-          return { success: true };
-        }
-
         default:
           return { success: false, error: "Unknown message type" };
       }

@@ -38,7 +38,6 @@ export type Message =
   | { type: "UPDATE_LOOP"; track: Track }
   | { type: "DELETE_LOOP"; trackId: string }
   | { type: "ACTIVATE_LOOP"; loopSettingId: string | null }
-  | { type: "SEEK_TO_LOOP_START" }
   | { type: "VIDEO_CHANGED"; videoId: string | null };
 
 /** レスポンス型 */
