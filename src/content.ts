@@ -126,9 +126,8 @@ async function init() {
 
 chrome.runtime.onMessage.addListener(
   (message: Message, _sender, sendResponse: (response: ResponseType) => void) => {
-    if (!video) {
-      setVideo(findVideo());
-    }
+    // Always get the latest video element (DOM may have been rebuilt while tab was inactive)
+    setVideo(findVideo());
 
     const videoId = getVideoId();
 
