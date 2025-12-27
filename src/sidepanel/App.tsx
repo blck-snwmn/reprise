@@ -12,6 +12,7 @@ import { sendMessage, formatTime } from "../utils";
 import { LoopList } from "./components/LoopList";
 import { LoopEditor } from "./components/LoopEditor";
 import { ActiveLoopDisplay } from "./components/ActiveLoopDisplay";
+import { ConfirmModal } from "./components/ConfirmModal";
 
 type EditorMode = { type: "closed" } | { type: "add" } | { type: "edit"; track: Track };
 
@@ -22,6 +23,7 @@ export default function App() {
   const [activeLoopSettingId, setActiveLoopSettingId] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<EditorMode>({ type: "closed" });
   const [error, setError] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -132,24 +134,29 @@ export default function App() {
     }
   };
 
-  const handleDeleteTrack = async (trackId: string) => {
-    if (!confirm("Delete this track?")) return;
+  const handleDeleteTrack = (trackId: string) => {
+    setDeleteTargetId(trackId);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
 
     // Find the loopSetting that references this track
-    const affectedLoopSetting = loopSettings.find((ls) => ls.trackId === trackId);
+    const affectedLoopSetting = loopSettings.find((ls) => ls.trackId === deleteTargetId);
 
     const result = await sendMessage<LoopOperationResponse>({
       type: "DELETE_LOOP",
-      trackId,
+      trackId: deleteTargetId,
     });
 
     if (result?.success) {
-      setTracks((prev) => prev.filter((t) => t.id !== trackId));
-      setLoopSettings((prev) => prev.filter((ls) => ls.trackId !== trackId));
+      setTracks((prev) => prev.filter((t) => t.id !== deleteTargetId));
+      setLoopSettings((prev) => prev.filter((ls) => ls.trackId !== deleteTargetId));
       if (affectedLoopSetting && activeLoopSettingId === affectedLoopSetting.id) {
         setActiveLoopSettingId(null);
       }
     }
+    setDeleteTargetId(null);
   };
 
   const getCurrentTime = async (): Promise<number> => {
@@ -247,6 +254,15 @@ export default function App() {
           />
         )}
       </div>
+
+      {deleteTargetId && (
+        <ConfirmModal
+          title="Delete Track"
+          message="Are you sure you want to delete this track?"
+          onConfirm={() => void confirmDelete()}
+          onCancel={() => setDeleteTargetId(null)}
+        />
+      )}
     </div>
   );
 }
