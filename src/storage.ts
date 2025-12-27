@@ -1,62 +1,68 @@
-import type { Track, LoopSetting, VideoLoopConfig, StorageData } from "./types";
+import type { Track, LoopSetting, VideoLoopConfig, StorageMeta } from "./types";
 
-const STORAGE_KEY = "reprise_data";
-const SCHEMA_VERSION = 1;
+const META_KEY = "reprise_meta";
+const VIDEO_KEY_PREFIX = "reprise_v_";
+const SCHEMA_VERSION = 2;
 
 function generateId(): string {
   return crypto.randomUUID();
+}
+
+function videoKey(videoId: string): string {
+  return `${VIDEO_KEY_PREFIX}${videoId}`;
+}
+
+function isStorageMeta(value: unknown): value is StorageMeta {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  if (!("videoIds" in value) || !("version" in value)) {
+    return false;
+  }
+  const { videoIds } = value;
+  return Array.isArray(videoIds);
 }
 
 function isVideoLoopConfig(value: unknown): value is VideoLoopConfig {
   if (typeof value !== "object" || value === null) {
     return false;
   }
-  return "tracks" in value && "loopSettings" in value;
+  return "videoId" in value && "tracks" in value && "loopSettings" in value;
 }
 
-function isStorageData(value: unknown): value is StorageData {
-  if (
-    typeof value !== "object" ||
-    value === null ||
-    !("videos" in value) ||
-    !("version" in value)
-  ) {
-    return false;
-  }
-  const { videos } = value;
-  if (typeof videos !== "object" || videos === null) {
-    return false;
-  }
-  for (const config of Object.values(videos)) {
-    if (!isVideoLoopConfig(config)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-async function getStorageData(): Promise<StorageData> {
-  const result = await chrome.storage.local.get(STORAGE_KEY);
-  const data = result[STORAGE_KEY];
-  if (isStorageData(data)) {
+async function getMeta(): Promise<StorageMeta> {
+  const result = await chrome.storage.local.get(META_KEY);
+  const data = result[META_KEY];
+  if (isStorageMeta(data)) {
     return data;
   }
-  return { videos: {}, version: SCHEMA_VERSION };
+  return { videoIds: [], version: SCHEMA_VERSION };
 }
 
-async function saveStorageData(data: StorageData): Promise<void> {
-  await chrome.storage.local.set({ [STORAGE_KEY]: data });
+async function saveMeta(meta: StorageMeta): Promise<void> {
+  await chrome.storage.local.set({ [META_KEY]: meta });
 }
 
 export async function getVideoConfig(videoId: string): Promise<VideoLoopConfig | null> {
-  const data = await getStorageData();
-  return data.videos[videoId] ?? null;
+  const key = videoKey(videoId);
+  const result = await chrome.storage.local.get(key);
+  const data = result[key];
+  if (isVideoLoopConfig(data)) {
+    return data;
+  }
+  return null;
 }
 
-export async function saveVideoConfig(config: VideoLoopConfig): Promise<void> {
-  const data = await getStorageData();
-  data.videos[config.videoId] = config;
-  await saveStorageData(data);
+async function saveVideoConfig(config: VideoLoopConfig): Promise<void> {
+  const key = videoKey(config.videoId);
+  const meta = await getMeta();
+
+  if (!meta.videoIds.includes(config.videoId)) {
+    meta.videoIds.push(config.videoId);
+    await saveMeta(meta);
+  }
+
+  await chrome.storage.local.set({ [key]: config });
 }
 
 export async function addLoop(
@@ -64,8 +70,7 @@ export async function addLoop(
   trackData: Omit<Track, "id" | "createdAt">,
   videoTitle?: string,
 ): Promise<{ track: Track; loopSetting: LoopSetting }> {
-  const data = await getStorageData();
-  let config = data.videos[videoId];
+  let config = await getVideoConfig(videoId);
 
   if (!config) {
     config = {
@@ -94,15 +99,13 @@ export async function addLoop(
 
   config.tracks.push(newTrack);
   config.loopSettings.push(newLoopSetting);
-  data.videos[videoId] = config;
-  await saveStorageData(data);
+  await saveVideoConfig(config);
 
   return { track: newTrack, loopSetting: newLoopSetting };
 }
 
 export async function updateLoop(videoId: string, track: Track): Promise<void> {
-  const data = await getStorageData();
-  const config = data.videos[videoId];
+  const config = await getVideoConfig(videoId);
 
   if (!config) {
     throw new Error(`Video config not found: ${videoId}`);
@@ -114,12 +117,11 @@ export async function updateLoop(videoId: string, track: Track): Promise<void> {
   }
 
   config.tracks[index] = track;
-  await saveStorageData(data);
+  await saveVideoConfig(config);
 }
 
 export async function deleteLoop(videoId: string, trackId: string): Promise<void> {
-  const data = await getStorageData();
-  const config = data.videos[videoId];
+  const config = await getVideoConfig(videoId);
 
   if (!config) {
     return;
@@ -139,22 +141,21 @@ export async function deleteLoop(videoId: string, trackId: string): Promise<void
   config.tracks = config.tracks.filter((t) => t.id !== trackId);
   config.loopSettings = config.loopSettings.filter((ls) => ls.trackId !== trackId);
 
-  await saveStorageData(data);
+  await saveVideoConfig(config);
 }
 
 export async function setActiveLoop(
   videoId: string,
   loopSettingId: string | null,
 ): Promise<Track | null> {
-  const data = await getStorageData();
-  const config = data.videos[videoId];
+  const config = await getVideoConfig(videoId);
 
   if (!config) {
     return null;
   }
 
   config.activeLoopSettingId = loopSettingId;
-  await saveStorageData(data);
+  await saveVideoConfig(config);
 
   if (loopSettingId === null) {
     return null;

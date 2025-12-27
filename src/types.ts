@@ -23,11 +23,13 @@ export interface VideoLoopConfig {
   loopSettings: LoopSetting[];
 }
 
-/** ストレージ構造 */
-export interface StorageData {
-  videos: Record<string, VideoLoopConfig>;
+/** ストレージメタデータ（動画ID一覧管理） */
+export interface StorageMeta {
+  videoIds: string[];
   version: number;
 }
+
+// Note: VideoLoopConfig is stored per-video as reprise_v_{videoId}
 
 /** メッセージ型 */
 export type Message =
