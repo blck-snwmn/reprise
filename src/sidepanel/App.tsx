@@ -224,8 +224,8 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <div className="p-4 border-b border-gray-800">
+    <div className="h-screen bg-gray-900 text-white flex flex-col">
+      <div className="flex-shrink-0 p-4 border-b border-gray-800">
         <h1 className="text-lg font-bold">Reprise</h1>
         <p className="text-sm text-gray-400 truncate mt-1">
           {videoInfo.videoTitle || "YouTube Video"}
@@ -233,13 +233,13 @@ export default function App() {
         <p className="text-xs text-gray-500">Duration: {formatTime(videoInfo.duration)}</p>
       </div>
 
-      <div className="p-4">
+      <div className="flex-shrink-0 p-4">
         <h2 className="text-sm font-medium text-gray-400 mb-2">Now Playing</h2>
         <ActiveLoopDisplay track={activeTrack} onStop={() => handleActivate(null)} />
       </div>
 
-      <div className="p-4 border-t border-gray-800">
-        <div className="flex items-center justify-between mb-4">
+      <div className="flex-1 flex flex-col min-h-0 p-4 border-t border-gray-800">
+        <div className="flex-shrink-0 flex items-center justify-between mb-4">
           <h2 className="text-sm font-medium text-gray-400">Tracks</h2>
           {editorMode.type === "closed" && (
             <button
@@ -251,31 +251,33 @@ export default function App() {
           )}
         </div>
 
-        {editorMode.type !== "closed" ? (
-          <LoopEditor
-            track={editorMode.type === "edit" ? editorMode.track : undefined}
-            duration={videoInfo.duration}
-            suggestedStartTime={editorMode.type === "add" ? suggestedStartTime : undefined}
-            onSave={(data) => {
-              if (editorMode.type === "edit") {
-                void handleUpdateLoop(editorMode.track.id, data);
-              } else {
-                void handleAddLoop(data);
-              }
-            }}
-            onCancel={() => setEditorMode({ type: "closed" })}
-            onGetCurrentTime={getCurrentTime}
-          />
-        ) : (
-          <LoopList
-            tracks={tracks}
-            loopSettings={loopSettings}
-            activeLoopSettingId={activeLoopSettingId}
-            onActivate={handleActivate}
-            onEdit={(track) => void handleOpenEditEditor(track)}
-            onDelete={handleDeleteTrack}
-          />
-        )}
+        <div className="flex-1 overflow-y-auto">
+          {editorMode.type !== "closed" ? (
+            <LoopEditor
+              track={editorMode.type === "edit" ? editorMode.track : undefined}
+              duration={videoInfo.duration}
+              suggestedStartTime={editorMode.type === "add" ? suggestedStartTime : undefined}
+              onSave={(data) => {
+                if (editorMode.type === "edit") {
+                  void handleUpdateLoop(editorMode.track.id, data);
+                } else {
+                  void handleAddLoop(data);
+                }
+              }}
+              onCancel={() => setEditorMode({ type: "closed" })}
+              onGetCurrentTime={getCurrentTime}
+            />
+          ) : (
+            <LoopList
+              tracks={tracks}
+              loopSettings={loopSettings}
+              activeLoopSettingId={activeLoopSettingId}
+              onActivate={handleActivate}
+              onEdit={(track) => void handleOpenEditEditor(track)}
+              onDelete={handleDeleteTrack}
+            />
+          )}
+        </div>
       </div>
 
       {deleteTargetId && (
