@@ -54,19 +54,26 @@ function resetState() {
   activeLoopSettingId = null;
 }
 
+function handleLoadedMetadata() {
+  // Notify Side Panel that video metadata is now available
+  void chrome.runtime.sendMessage({ type: "VIDEO_METADATA_LOADED" }).catch(() => {});
+}
+
 function setVideo(newVideo: HTMLVideoElement | null) {
   if (video === newVideo) return;
 
-  // Remove listener from old video to prevent memory leaks
+  // Remove listeners from old video to prevent memory leaks
   if (video) {
     video.removeEventListener("timeupdate", handleTimeUpdate);
+    video.removeEventListener("loadedmetadata", handleLoadedMetadata);
   }
 
   video = newVideo;
 
-  // Add listener to new video
+  // Add listeners to new video
   if (video) {
     video.addEventListener("timeupdate", handleTimeUpdate);
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
   }
 }
 
@@ -134,18 +141,23 @@ chrome.runtime.onMessage.addListener(
 
     const handleMessage = async (): Promise<ResponseType> => {
       switch (message.type) {
-        case "GET_VIDEO_INFO":
+        case "GET_VIDEO_INFO": {
+          const duration = video?.duration;
+          const currentTime = video?.currentTime;
           return {
             videoId,
             videoTitle: getVideoTitle(),
-            duration: video?.duration ?? 0,
-            currentTime: video?.currentTime ?? 0,
+            duration: duration && !Number.isNaN(duration) ? duration : 0,
+            currentTime: currentTime && !Number.isNaN(currentTime) ? currentTime : 0,
           } satisfies VideoInfoResponse;
+        }
 
-        case "GET_CURRENT_TIME":
+        case "GET_CURRENT_TIME": {
+          const currentTime = video?.currentTime;
           return {
-            currentTime: video?.currentTime ?? 0,
+            currentTime: currentTime && !Number.isNaN(currentTime) ? currentTime : 0,
           } satisfies CurrentTimeResponse;
+        }
 
         case "GET_LOOPS": {
           if (!videoId) {

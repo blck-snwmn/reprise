@@ -58,7 +58,7 @@ export default function App() {
     debouncedLoadData();
 
     const handleMessage = (message: Message) => {
-      if (message.type === "VIDEO_CHANGED") {
+      if (message.type === "VIDEO_CHANGED" || message.type === "VIDEO_METADATA_LOADED") {
         debouncedLoadData();
       }
     };
@@ -178,6 +178,23 @@ export default function App() {
     return Math.max(...tracks.map((t) => t.endTime));
   }, [tracks]);
 
+  const refreshVideoInfo = async () => {
+    const info = await sendMessage<VideoInfoResponse>({ type: "GET_VIDEO_INFO" });
+    if (info) {
+      setVideoInfo(info);
+    }
+  };
+
+  const handleOpenAddEditor = async () => {
+    await refreshVideoInfo();
+    setEditorMode({ type: "add" });
+  };
+
+  const handleOpenEditEditor = async (track: Track) => {
+    await refreshVideoInfo();
+    setEditorMode({ type: "edit", track });
+  };
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-900 text-white p-4">
@@ -226,7 +243,7 @@ export default function App() {
           <h2 className="text-sm font-medium text-gray-400">Tracks</h2>
           {editorMode.type === "closed" && (
             <button
-              onClick={() => setEditorMode({ type: "add" })}
+              onClick={() => void handleOpenAddEditor()}
               className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white text-sm font-medium rounded transition-colors"
             >
               + Add Track
@@ -255,7 +272,7 @@ export default function App() {
             loopSettings={loopSettings}
             activeLoopSettingId={activeLoopSettingId}
             onActivate={handleActivate}
-            onEdit={(track) => setEditorMode({ type: "edit", track })}
+            onEdit={(track) => void handleOpenEditEditor(track)}
             onDelete={handleDeleteTrack}
           />
         )}

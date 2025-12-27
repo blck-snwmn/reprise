@@ -40,7 +40,8 @@ export type Message =
   | { type: "UPDATE_LOOP"; track: Track }
   | { type: "DELETE_LOOP"; trackId: string }
   | { type: "ACTIVATE_LOOP"; loopSettingId: string | null }
-  | { type: "VIDEO_CHANGED"; videoId: string | null };
+  | { type: "VIDEO_CHANGED"; videoId: string | null }
+  | { type: "VIDEO_METADATA_LOADED" };
 
 /** レスポンス型 */
 export type VideoInfoResponse = {
