@@ -57,6 +57,24 @@ bun run test:watch
 3. `bun run test` - テスト実行
 4. `bun run build` - ビルド確認
 
+## Release
+
+リリースはタグをプッシュするだけでCIが自動実行される:
+
+```bash
+# 現在のタグを確認
+git tag --sort=-version:refname | head -5
+
+# 新しいタグを作成してプッシュ
+git tag v0.x.x
+git push origin v0.x.x
+```
+
+CIが自動で以下を実行:
+- ビルド
+- `reprise-v0.x.x.zip` を作成
+- GitHub Releaseを作成（リリースノートは自動生成）
+
 ## Coding Rules
 
 ### content.ts: video変数の扱い
