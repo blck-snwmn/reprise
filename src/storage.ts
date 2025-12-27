@@ -1,4 +1,4 @@
-import type { LoopEntry, VideoLoopConfig, StorageData } from "./types";
+import type { Track, LoopSetting, VideoLoopConfig, StorageData } from "./types";
 
 const STORAGE_KEY = "reprise_data";
 const SCHEMA_VERSION = 1;
@@ -7,8 +7,32 @@ function generateId(): string {
   return crypto.randomUUID();
 }
 
+function isVideoLoopConfig(value: unknown): value is VideoLoopConfig {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  return "tracks" in value && "loopSettings" in value;
+}
+
 function isStorageData(value: unknown): value is StorageData {
-  return typeof value === "object" && value !== null && "videos" in value && "version" in value;
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !("videos" in value) ||
+    !("version" in value)
+  ) {
+    return false;
+  }
+  const { videos } = value;
+  if (typeof videos !== "object" || videos === null) {
+    return false;
+  }
+  for (const config of Object.values(videos)) {
+    if (!isVideoLoopConfig(config)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 async function getStorageData(): Promise<StorageData> {
@@ -37,9 +61,9 @@ export async function saveVideoConfig(config: VideoLoopConfig): Promise<void> {
 
 export async function addLoop(
   videoId: string,
-  loopData: Omit<LoopEntry, "id" | "createdAt">,
+  trackData: Omit<Track, "id" | "createdAt">,
   videoTitle?: string,
-): Promise<LoopEntry> {
+): Promise<{ track: Track; loopSetting: LoopSetting }> {
   const data = await getStorageData();
   let config = data.videos[videoId];
 
@@ -47,8 +71,9 @@ export async function addLoop(
     config = {
       videoId,
       videoTitle,
-      activeLoopId: null,
-      loops: [],
+      activeLoopSettingId: null,
+      tracks: [],
+      loopSettings: [],
     };
   }
 
@@ -56,20 +81,26 @@ export async function addLoop(
     config.videoTitle = videoTitle;
   }
 
-  const newLoop: LoopEntry = {
-    ...loopData,
+  const newTrack: Track = {
+    ...trackData,
     id: generateId(),
     createdAt: Date.now(),
   };
 
-  config.loops.push(newLoop);
+  const newLoopSetting: LoopSetting = {
+    id: generateId(),
+    trackId: newTrack.id,
+  };
+
+  config.tracks.push(newTrack);
+  config.loopSettings.push(newLoopSetting);
   data.videos[videoId] = config;
   await saveStorageData(data);
 
-  return newLoop;
+  return { track: newTrack, loopSetting: newLoopSetting };
 }
 
-export async function updateLoop(videoId: string, loop: LoopEntry): Promise<void> {
+export async function updateLoop(videoId: string, track: Track): Promise<void> {
   const data = await getStorageData();
   const config = data.videos[videoId];
 
@@ -77,16 +108,16 @@ export async function updateLoop(videoId: string, loop: LoopEntry): Promise<void
     throw new Error(`Video config not found: ${videoId}`);
   }
 
-  const index = config.loops.findIndex((l) => l.id === loop.id);
+  const index = config.tracks.findIndex((t) => t.id === track.id);
   if (index === -1) {
-    throw new Error(`Loop not found: ${loop.id}`);
+    throw new Error(`Track not found: ${track.id}`);
   }
 
-  config.loops[index] = loop;
+  config.tracks[index] = track;
   await saveStorageData(data);
 }
 
-export async function deleteLoop(videoId: string, loopId: string): Promise<void> {
+export async function deleteLoop(videoId: string, trackId: string): Promise<void> {
   const data = await getStorageData();
   const config = data.videos[videoId];
 
@@ -94,19 +125,27 @@ export async function deleteLoop(videoId: string, loopId: string): Promise<void>
     return;
   }
 
-  config.loops = config.loops.filter((l) => l.id !== loopId);
+  // Find loopSettings that reference this track
+  const affectedLoopSettings = config.loopSettings.filter((ls) => ls.trackId === trackId);
 
-  if (config.activeLoopId === loopId) {
-    config.activeLoopId = null;
+  // Clear activeLoopSettingId if it's one of the affected loopSettings
+  if (
+    config.activeLoopSettingId &&
+    affectedLoopSettings.some((ls) => ls.id === config.activeLoopSettingId)
+  ) {
+    config.activeLoopSettingId = null;
   }
+
+  config.tracks = config.tracks.filter((t) => t.id !== trackId);
+  config.loopSettings = config.loopSettings.filter((ls) => ls.trackId !== trackId);
 
   await saveStorageData(data);
 }
 
 export async function setActiveLoop(
   videoId: string,
-  loopId: string | null,
-): Promise<LoopEntry | null> {
+  loopSettingId: string | null,
+): Promise<Track | null> {
   const data = await getStorageData();
   const config = data.videos[videoId];
 
@@ -114,20 +153,29 @@ export async function setActiveLoop(
     return null;
   }
 
-  config.activeLoopId = loopId;
+  config.activeLoopSettingId = loopSettingId;
   await saveStorageData(data);
 
-  if (loopId === null) {
+  if (loopSettingId === null) {
     return null;
   }
 
-  return config.loops.find((l) => l.id === loopId) ?? null;
+  const loopSetting = config.loopSettings.find((ls) => ls.id === loopSettingId);
+  if (!loopSetting) {
+    return null;
+  }
+
+  return config.tracks.find((t) => t.id === loopSetting.trackId) ?? null;
 }
 
-export async function getActiveLoop(videoId: string): Promise<LoopEntry | null> {
+export async function getActiveLoop(videoId: string): Promise<Track | null> {
   const config = await getVideoConfig(videoId);
-  if (!config || !config.activeLoopId) {
+  if (!config || !config.activeLoopSettingId) {
     return null;
   }
-  return config.loops.find((l) => l.id === config.activeLoopId) ?? null;
+  const loopSetting = config.loopSettings.find((ls) => ls.id === config.activeLoopSettingId);
+  if (!loopSetting) {
+    return null;
+  }
+  return config.tracks.find((t) => t.id === loopSetting.trackId) ?? null;
 }

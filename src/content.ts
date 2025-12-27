@@ -21,7 +21,7 @@ let startTime = 0;
 let endTime = 0;
 let enabled = false;
 let lastVideoId: string | null = null;
-let activeLoopId: string | null = null;
+let activeLoopSettingId: string | null = null;
 
 function getVideoId(): string | null {
   const params = new URLSearchParams(window.location.search);
@@ -51,7 +51,7 @@ function resetState() {
   startTime = 0;
   endTime = 0;
   enabled = false;
-  activeLoopId = null;
+  activeLoopSettingId = null;
 }
 
 function setVideo(newVideo: HTMLVideoElement | null) {
@@ -71,12 +71,13 @@ function setVideo(newVideo: HTMLVideoElement | null) {
 }
 
 async function restoreLoopState(videoId: string) {
-  const loop = await getActiveLoop(videoId);
-  if (loop) {
-    startTime = loop.startTime;
-    endTime = loop.endTime;
+  const config = await getVideoConfig(videoId);
+  const track = await getActiveLoop(videoId);
+  if (track && config?.activeLoopSettingId) {
+    startTime = track.startTime;
+    endTime = track.endTime;
     enabled = true;
-    activeLoopId = loop.id;
+    activeLoopSettingId = config.activeLoopSettingId;
     // 開始位置へ移動
     if (video) {
       video.currentTime = startTime;
@@ -148,13 +149,19 @@ chrome.runtime.onMessage.addListener(
 
         case "GET_LOOPS": {
           if (!videoId) {
-            return { videoId: null, loops: [], activeLoopId: null } satisfies LoopsResponse;
+            return {
+              videoId: null,
+              tracks: [],
+              loopSettings: [],
+              activeLoopSettingId: null,
+            } satisfies LoopsResponse;
           }
           const config = await getVideoConfig(videoId);
           return {
             videoId,
-            loops: config?.loops ?? [],
-            activeLoopId: config?.activeLoopId ?? null,
+            tracks: config?.tracks ?? [],
+            loopSettings: config?.loopSettings ?? [],
+            activeLoopSettingId: config?.activeLoopSettingId ?? null,
           } satisfies LoopsResponse;
         }
 
@@ -162,32 +169,56 @@ chrome.runtime.onMessage.addListener(
           if (!videoId) {
             return { success: false, error: "No video" } satisfies LoopOperationResponse;
           }
-          const newLoop = await addLoop(videoId, message.loop, getVideoTitle() ?? undefined);
-          return { success: true, loop: newLoop } satisfies LoopOperationResponse;
+          const { track: newTrack, loopSetting: newLoopSetting } = await addLoop(
+            videoId,
+            message.track,
+            getVideoTitle() ?? undefined,
+          );
+          return {
+            success: true,
+            track: newTrack,
+            loopSetting: newLoopSetting,
+          } satisfies LoopOperationResponse;
         }
 
         case "UPDATE_LOOP": {
           if (!videoId) {
             return { success: false, error: "No video" } satisfies LoopOperationResponse;
           }
-          await updateLoop(videoId, message.loop);
-          if (activeLoopId === message.loop.id) {
-            startTime = message.loop.startTime;
-            endTime = message.loop.endTime;
-            // 範囲外なら開始位置へ移動
-            if (video && (video.currentTime < startTime || video.currentTime >= endTime)) {
-              video.currentTime = startTime;
+          await updateLoop(videoId, message.track);
+          // Check if the updated track is the one currently being looped
+          const config = await getVideoConfig(videoId);
+          if (config && activeLoopSettingId) {
+            const activeSetting = config.loopSettings.find((ls) => ls.id === activeLoopSettingId);
+            if (activeSetting && activeSetting.trackId === message.track.id) {
+              startTime = message.track.startTime;
+              endTime = message.track.endTime;
+              // 範囲外なら開始位置へ移動
+              if (video && (video.currentTime < startTime || video.currentTime >= endTime)) {
+                video.currentTime = startTime;
+              }
             }
           }
-          return { success: true, loop: message.loop } satisfies LoopOperationResponse;
+          return { success: true, track: message.track } satisfies LoopOperationResponse;
         }
 
         case "DELETE_LOOP": {
           if (!videoId) {
             return { success: false, error: "No video" } satisfies LoopOperationResponse;
           }
-          await deleteLoop(videoId, message.loopId);
-          if (activeLoopId === message.loopId) {
+          // Check if the track being deleted is the one currently being looped
+          const configBeforeDelete = await getVideoConfig(videoId);
+          let shouldReset = false;
+          if (configBeforeDelete && activeLoopSettingId) {
+            const activeSetting = configBeforeDelete.loopSettings.find(
+              (ls) => ls.id === activeLoopSettingId,
+            );
+            if (activeSetting && activeSetting.trackId === message.trackId) {
+              shouldReset = true;
+            }
+          }
+          await deleteLoop(videoId, message.trackId);
+          if (shouldReset) {
             resetState();
           }
           return { success: true } satisfies LoopOperationResponse;
@@ -197,12 +228,12 @@ chrome.runtime.onMessage.addListener(
           if (!videoId) {
             return { success: false, error: "No video" } satisfies LoopOperationResponse;
           }
-          const loop = await setActiveLoop(videoId, message.loopId);
-          if (loop) {
-            startTime = loop.startTime;
-            endTime = loop.endTime;
+          const track = await setActiveLoop(videoId, message.loopSettingId);
+          if (track && message.loopSettingId) {
+            startTime = track.startTime;
+            endTime = track.endTime;
             enabled = true;
-            activeLoopId = loop.id;
+            activeLoopSettingId = message.loopSettingId;
             // 開始位置へ移動
             if (video) {
               video.currentTime = startTime;
@@ -210,11 +241,11 @@ chrome.runtime.onMessage.addListener(
           } else {
             resetState();
           }
-          return { success: true, loop: loop ?? undefined } satisfies LoopOperationResponse;
+          return { success: true, track: track ?? undefined } satisfies LoopOperationResponse;
         }
 
         case "SEEK_TO_LOOP_START": {
-          if (enabled && video && activeLoopId) {
+          if (enabled && video && activeLoopSettingId) {
             video.currentTime = startTime;
           }
           return { success: true };

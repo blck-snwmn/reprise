@@ -1,17 +1,17 @@
-import type { LoopEntry } from "../../types";
+import type { Track } from "../../types";
 import { formatTime } from "../../utils";
 
 interface LoopItemProps {
-  loop: LoopEntry;
+  track: Track;
   isActive: boolean;
   onActivate: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-export function LoopItem({ loop, isActive, onActivate, onEdit, onDelete }: LoopItemProps) {
-  const displayName = loop.songName || `Loop ${formatTime(loop.startTime)}`;
-  const timeRange = `${formatTime(loop.startTime)} - ${formatTime(loop.endTime)}`;
+export function LoopItem({ track, isActive, onActivate, onEdit, onDelete }: LoopItemProps) {
+  const displayName = track.songName || `Loop ${formatTime(track.startTime)}`;
+  const timeRange = `${formatTime(track.startTime)} - ${formatTime(track.endTime)}`;
 
   return (
     <div
@@ -31,7 +31,9 @@ export function LoopItem({ loop, isActive, onActivate, onEdit, onDelete }: LoopI
           />
           <div className="min-w-0">
             <p className="text-sm font-medium text-white truncate">{displayName}</p>
-            {loop.artistName && <p className="text-xs text-gray-400 truncate">{loop.artistName}</p>}
+            {track.artistName && (
+              <p className="text-xs text-gray-400 truncate">{track.artistName}</p>
+            )}
             <p className="text-xs text-gray-500">{timeRange}</p>
           </div>
         </div>

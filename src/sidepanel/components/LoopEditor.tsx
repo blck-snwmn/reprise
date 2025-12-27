@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { TimeInput } from "./TimeInput";
 import { parseTime, formatTime } from "../../utils";
-import type { LoopEntry } from "../../types";
+import type { Track } from "../../types";
 
 interface LoopEditorProps {
-  loop?: LoopEntry;
+  track?: Track;
   duration: number;
   onSave: (data: {
     songName: string;
@@ -17,16 +17,18 @@ interface LoopEditorProps {
 }
 
 export function LoopEditor({
-  loop,
+  track,
   duration,
   onSave,
   onCancel,
   onGetCurrentTime,
 }: LoopEditorProps) {
-  const [songName, setSongName] = useState(loop?.songName ?? "");
-  const [artistName, setArtistName] = useState(loop?.artistName ?? "");
-  const [startInput, setStartInput] = useState(loop ? formatTime(loop.startTime) : "0:00");
-  const [endInput, setEndInput] = useState(loop ? formatTime(loop.endTime) : formatTime(duration));
+  const [songName, setSongName] = useState(track?.songName ?? "");
+  const [artistName, setArtistName] = useState(track?.artistName ?? "");
+  const [startInput, setStartInput] = useState(track ? formatTime(track.startTime) : "0:00");
+  const [endInput, setEndInput] = useState(
+    track ? formatTime(track.endTime) : formatTime(duration),
+  );
   const [errors, setErrors] = useState<{
     start?: string;
     end?: string;
@@ -77,7 +79,7 @@ export function LoopEditor({
 
   return (
     <form onSubmit={handleSubmit} className="p-4 bg-gray-800 rounded-lg border border-gray-700">
-      <h3 className="text-sm font-medium text-white mb-4">{loop ? "Edit Loop" : "Add Loop"}</h3>
+      <h3 className="text-sm font-medium text-white mb-4">{track ? "Edit Loop" : "Add Loop"}</h3>
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">

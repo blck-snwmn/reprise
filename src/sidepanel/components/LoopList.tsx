@@ -1,19 +1,30 @@
 import { useMemo } from "react";
-import type { LoopEntry } from "../../types";
+import type { Track, LoopSetting } from "../../types";
 import { LoopItem } from "./LoopItem";
 
 interface LoopListProps {
-  loops: LoopEntry[];
-  activeLoopId: string | null;
-  onActivate: (loopId: string | null) => void;
-  onEdit: (loop: LoopEntry) => void;
-  onDelete: (loopId: string) => void;
+  tracks: Track[];
+  loopSettings: LoopSetting[];
+  activeLoopSettingId: string | null;
+  onActivate: (loopSettingId: string | null) => void;
+  onEdit: (track: Track) => void;
+  onDelete: (trackId: string) => void;
 }
 
-export function LoopList({ loops, activeLoopId, onActivate, onEdit, onDelete }: LoopListProps) {
-  const sortedLoops = useMemo(() => [...loops].sort((a, b) => a.startTime - b.startTime), [loops]);
+export function LoopList({
+  tracks,
+  loopSettings,
+  activeLoopSettingId,
+  onActivate,
+  onEdit,
+  onDelete,
+}: LoopListProps) {
+  const sortedTracks = useMemo(
+    () => [...tracks].sort((a, b) => a.startTime - b.startTime),
+    [tracks],
+  );
 
-  if (loops.length === 0) {
+  if (tracks.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
         <p className="text-sm">No loops yet</p>
@@ -24,16 +35,20 @@ export function LoopList({ loops, activeLoopId, onActivate, onEdit, onDelete }: 
 
   return (
     <div className="flex flex-col gap-2">
-      {sortedLoops.map((loop) => (
-        <LoopItem
-          key={loop.id}
-          loop={loop}
-          isActive={loop.id === activeLoopId}
-          onActivate={() => onActivate(loop.id === activeLoopId ? null : loop.id)}
-          onEdit={() => onEdit(loop)}
-          onDelete={() => onDelete(loop.id)}
-        />
-      ))}
+      {sortedTracks.map((track) => {
+        const loopSetting = loopSettings.find((ls) => ls.trackId === track.id);
+        const isActive = loopSetting?.id === activeLoopSettingId;
+        return (
+          <LoopItem
+            key={track.id}
+            track={track}
+            isActive={isActive}
+            onActivate={() => onActivate(isActive ? null : (loopSetting?.id ?? null))}
+            onEdit={() => onEdit(track)}
+            onDelete={() => onDelete(track.id)}
+          />
+        );
+      })}
     </div>
   );
 }

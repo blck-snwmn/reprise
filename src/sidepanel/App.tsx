@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type {
-  LoopEntry,
+  Track,
+  LoopSetting,
   Message,
   VideoInfoResponse,
   LoopsResponse,
@@ -11,12 +12,13 @@ import { sendMessage, formatTime } from "../utils";
 import { LoopList } from "./components/LoopList";
 import { LoopEditor } from "./components/LoopEditor";
 
-type EditorMode = { type: "closed" } | { type: "add" } | { type: "edit"; loop: LoopEntry };
+type EditorMode = { type: "closed" } | { type: "add" } | { type: "edit"; track: Track };
 
 export default function App() {
   const [videoInfo, setVideoInfo] = useState<VideoInfoResponse | null>(null);
-  const [loops, setLoops] = useState<LoopEntry[]>([]);
-  const [activeLoopId, setActiveLoopId] = useState<string | null>(null);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [loopSettings, setLoopSettings] = useState<LoopSetting[]>([]);
+  const [activeLoopSettingId, setActiveLoopSettingId] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<EditorMode>({ type: "closed" });
   const [error, setError] = useState<string | null>(null);
 
@@ -27,8 +29,9 @@ export default function App() {
 
       const loopsData = await sendMessage<LoopsResponse>({ type: "GET_LOOPS" });
       if (loopsData) {
-        setLoops(loopsData.loops);
-        setActiveLoopId(loopsData.activeLoopId);
+        setTracks(loopsData.tracks);
+        setLoopSettings(loopsData.loopSettings);
+        setActiveLoopSettingId(loopsData.activeLoopSettingId);
       }
       setError(null);
     } catch {
@@ -72,13 +75,13 @@ export default function App() {
     };
   }, [debouncedLoadData]);
 
-  const handleActivate = async (loopId: string | null) => {
+  const handleActivate = async (loopSettingId: string | null) => {
     const result = await sendMessage<LoopOperationResponse>({
       type: "ACTIVATE_LOOP",
-      loopId,
+      loopSettingId,
     });
     if (result?.success) {
-      setActiveLoopId(loopId);
+      setActiveLoopSettingId(loopSettingId);
     }
   };
 
@@ -90,17 +93,19 @@ export default function App() {
   }) => {
     const result = await sendMessage<LoopOperationResponse>({
       type: "ADD_LOOP",
-      loop: data,
+      track: data,
     });
-    if (result?.success && result.loop) {
-      const newLoop = result.loop;
-      setLoops((prev) => [...prev, newLoop]);
+    if (result?.success && result.track && result.loopSetting) {
+      const newTrack = result.track;
+      const newLoopSetting = result.loopSetting;
+      setTracks((prev) => [...prev, newTrack]);
+      setLoopSettings((prev) => [...prev, newLoopSetting]);
       setEditorMode({ type: "closed" });
     }
   };
 
   const handleUpdateLoop = async (
-    loopId: string,
+    trackId: string,
     data: {
       songName: string;
       artistName: string;
@@ -110,34 +115,38 @@ export default function App() {
   ) => {
     if (editorMode.type !== "edit") return;
 
-    const updatedLoop: LoopEntry = {
-      ...editorMode.loop,
+    const updatedTrack: Track = {
+      ...editorMode.track,
       ...data,
     };
 
     const result = await sendMessage<LoopOperationResponse>({
       type: "UPDATE_LOOP",
-      loop: updatedLoop,
+      track: updatedTrack,
     });
 
     if (result?.success) {
-      setLoops((prev) => prev.map((l) => (l.id === loopId ? updatedLoop : l)));
+      setTracks((prev) => prev.map((t) => (t.id === trackId ? updatedTrack : t)));
       setEditorMode({ type: "closed" });
     }
   };
 
-  const handleDeleteLoop = async (loopId: string) => {
-    if (!confirm("Delete this loop?")) return;
+  const handleDeleteTrack = async (trackId: string) => {
+    if (!confirm("Delete this track?")) return;
+
+    // Find the loopSetting that references this track
+    const affectedLoopSetting = loopSettings.find((ls) => ls.trackId === trackId);
 
     const result = await sendMessage<LoopOperationResponse>({
       type: "DELETE_LOOP",
-      loopId,
+      trackId,
     });
 
     if (result?.success) {
-      setLoops((prev) => prev.filter((l) => l.id !== loopId));
-      if (activeLoopId === loopId) {
-        setActiveLoopId(null);
+      setTracks((prev) => prev.filter((t) => t.id !== trackId));
+      setLoopSettings((prev) => prev.filter((ls) => ls.trackId !== trackId));
+      if (affectedLoopSetting && activeLoopSettingId === affectedLoopSetting.id) {
+        setActiveLoopSettingId(null);
       }
     }
   };
@@ -202,11 +211,11 @@ export default function App() {
 
         {editorMode.type !== "closed" ? (
           <LoopEditor
-            loop={editorMode.type === "edit" ? editorMode.loop : undefined}
+            track={editorMode.type === "edit" ? editorMode.track : undefined}
             duration={videoInfo.duration}
             onSave={(data) => {
               if (editorMode.type === "edit") {
-                void handleUpdateLoop(editorMode.loop.id, data);
+                void handleUpdateLoop(editorMode.track.id, data);
               } else {
                 void handleAddLoop(data);
               }
@@ -216,11 +225,12 @@ export default function App() {
           />
         ) : (
           <LoopList
-            loops={loops}
-            activeLoopId={activeLoopId}
+            tracks={tracks}
+            loopSettings={loopSettings}
+            activeLoopSettingId={activeLoopSettingId}
             onActivate={handleActivate}
-            onEdit={(loop) => setEditorMode({ type: "edit", loop })}
-            onDelete={handleDeleteLoop}
+            onEdit={(track) => setEditorMode({ type: "edit", track })}
+            onDelete={handleDeleteTrack}
           />
         )}
       </div>

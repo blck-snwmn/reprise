@@ -1,5 +1,5 @@
-/** 1つのループ範囲 */
-export interface LoopEntry {
+/** トラック定義（曲の区間） */
+export interface Track {
   id: string;
   songName: string;
   artistName: string;
@@ -8,12 +8,19 @@ export interface LoopEntry {
   createdAt: number;
 }
 
+/** ループ設定（どのトラックを再生するか） */
+export interface LoopSetting {
+  id: string;
+  trackId: string;
+}
+
 /** 1動画のループ設定 */
 export interface VideoLoopConfig {
   videoId: string;
   videoTitle?: string;
-  activeLoopId: string | null;
-  loops: LoopEntry[];
+  activeLoopSettingId: string | null;
+  tracks: Track[];
+  loopSettings: LoopSetting[];
 }
 
 /** ストレージ構造 */
@@ -27,10 +34,10 @@ export type Message =
   | { type: "GET_VIDEO_INFO" }
   | { type: "GET_CURRENT_TIME" }
   | { type: "GET_LOOPS" }
-  | { type: "ADD_LOOP"; loop: Omit<LoopEntry, "id" | "createdAt"> }
-  | { type: "UPDATE_LOOP"; loop: LoopEntry }
-  | { type: "DELETE_LOOP"; loopId: string }
-  | { type: "ACTIVATE_LOOP"; loopId: string | null }
+  | { type: "ADD_LOOP"; track: Omit<Track, "id" | "createdAt"> }
+  | { type: "UPDATE_LOOP"; track: Track }
+  | { type: "DELETE_LOOP"; trackId: string }
+  | { type: "ACTIVATE_LOOP"; loopSettingId: string | null }
   | { type: "SEEK_TO_LOOP_START" }
   | { type: "VIDEO_CHANGED"; videoId: string | null };
 
@@ -44,8 +51,9 @@ export type VideoInfoResponse = {
 
 export type LoopsResponse = {
   videoId: string | null;
-  loops: LoopEntry[];
-  activeLoopId: string | null;
+  tracks: Track[];
+  loopSettings: LoopSetting[];
+  activeLoopSettingId: string | null;
 };
 
 export type CurrentTimeResponse = {
@@ -54,6 +62,7 @@ export type CurrentTimeResponse = {
 
 export type LoopOperationResponse = {
   success: boolean;
-  loop?: LoopEntry;
+  track?: Track;
+  loopSetting?: LoopSetting;
   error?: string;
 };
