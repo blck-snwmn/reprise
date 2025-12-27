@@ -55,6 +55,24 @@ describe("parseTime", () => {
       expect(parseTime("1:ab")).toBeNaN();
     });
   });
+
+  describe("whitespace handling", () => {
+    it("trims leading spaces", () => {
+      expect(parseTime("  1:26")).toBe(86);
+    });
+
+    it("trims trailing spaces", () => {
+      expect(parseTime("1:26  ")).toBe(86);
+    });
+
+    it("trims both leading and trailing spaces", () => {
+      expect(parseTime("  1:26  ")).toBe(86);
+    });
+
+    it("trims spaces for h:mm:ss format", () => {
+      expect(parseTime("  1:23:45  ")).toBe(5025);
+    });
+  });
 });
 
 describe("formatTime", () => {

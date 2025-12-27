@@ -1,7 +1,10 @@
 import type { Message } from "./types";
 
 export function parseTime(timeStr: string): number {
-  const parts = timeStr.split(":").map((p) => parseInt(p, 10));
+  const parts = timeStr
+    .trim()
+    .split(":")
+    .map((p) => parseInt(p, 10));
   if (parts.length === 2) {
     const min = parts[0];
     const sec = parts[1];
