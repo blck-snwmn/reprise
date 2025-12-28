@@ -69,6 +69,7 @@ export async function addLoop(
   videoId: string,
   trackData: Omit<Track, "id" | "createdAt">,
   videoTitle?: string,
+  channelName?: string,
 ): Promise<{ track: Track; loopSetting: LoopSetting }> {
   let config = await getVideoConfig(videoId);
 
@@ -76,6 +77,7 @@ export async function addLoop(
     config = {
       videoId,
       videoTitle,
+      channelName,
       activeLoopSettingId: null,
       tracks: [],
       loopSettings: [],
@@ -85,11 +87,16 @@ export async function addLoop(
   if (videoTitle) {
     config.videoTitle = videoTitle;
   }
+  if (channelName) {
+    config.channelName = channelName;
+  }
 
   const newTrack: Track = {
     ...trackData,
     id: generateId(),
     createdAt: Date.now(),
+    videoTitle,
+    channelName,
   };
 
   const newLoopSetting: LoopSetting = {

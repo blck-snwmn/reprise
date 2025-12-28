@@ -35,6 +35,13 @@ function getVideoTitle(): string | null {
   return titleElement?.textContent ?? null;
 }
 
+function getChannelName(): string | null {
+  const channelElement = document.querySelector(
+    "ytd-channel-name yt-formatted-string a, #owner #channel-name a, #owner ytd-channel-name a",
+  );
+  return channelElement?.textContent?.trim() ?? null;
+}
+
 function findVideo(): HTMLVideoElement | null {
   return document.querySelector("video.html5-main-video");
 }
@@ -147,6 +154,7 @@ chrome.runtime.onMessage.addListener(
           return {
             videoId,
             videoTitle: getVideoTitle(),
+            channelName: getChannelName(),
             duration: duration && !Number.isNaN(duration) ? duration : 0,
             currentTime: currentTime && !Number.isNaN(currentTime) ? currentTime : 0,
           } satisfies VideoInfoResponse;
@@ -185,6 +193,7 @@ chrome.runtime.onMessage.addListener(
             videoId,
             message.track,
             getVideoTitle() ?? undefined,
+            getChannelName() ?? undefined,
           );
           return {
             success: true,

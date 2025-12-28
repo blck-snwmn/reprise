@@ -6,6 +6,8 @@ export interface Track {
   startTime: number;
   endTime: number;
   createdAt: number;
+  videoTitle?: string;
+  channelName?: string;
 }
 
 /** ループ設定（どのトラックを再生するか） */
@@ -18,6 +20,7 @@ export interface LoopSetting {
 export interface VideoLoopConfig {
   videoId: string;
   videoTitle?: string;
+  channelName?: string;
   activeLoopSettingId: string | null;
   tracks: Track[];
   loopSettings: LoopSetting[];
@@ -47,6 +50,7 @@ export type Message =
 export type VideoInfoResponse = {
   videoId: string | null;
   videoTitle: string | null;
+  channelName: string | null;
   duration: number;
   currentTime: number;
 };
