@@ -34,9 +34,15 @@ export function LoopEditor({
     }
     return "0:00";
   });
-  const [endInput, setEndInput] = useState(
-    track ? formatTime(track.endTime) : formatTime(duration),
-  );
+  const [endInput, setEndInput] = useState(() => {
+    if (track) return formatTime(track.endTime);
+    // Auto-set end time to start + 1 minute when suggestedStartTime is provided
+    if (suggestedStartTime !== undefined && suggestedStartTime < duration) {
+      const autoEndTime = Math.min(suggestedStartTime + 60, duration);
+      return formatTime(autoEndTime);
+    }
+    return "0:00";
+  });
   const [errors, setErrors] = useState<{
     start?: string;
     end?: string;
@@ -115,7 +121,17 @@ export function LoopEditor({
         <TimeInput
           label="Start"
           value={startInput}
-          onChange={setStartInput}
+          onChange={(value) => {
+            setStartInput(value);
+            // Auto-set end time to start + 1 minute for new loops
+            if (!track) {
+              const startSeconds = parseTime(value);
+              if (!isNaN(startSeconds)) {
+                const autoEndTime = Math.min(startSeconds + 60, duration);
+                setEndInput(formatTime(autoEndTime));
+              }
+            }
+          }}
           onGetCurrentTime={() => handleGetCurrentTime(setStartInput)}
           duration={duration}
           error={errors.start}
